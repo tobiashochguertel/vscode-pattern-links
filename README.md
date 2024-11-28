@@ -176,6 +176,28 @@ The extension provides special handling for `file://` URLs to ensure proper path
 
 This ensures that both absolute and relative file paths work correctly, while maintaining proper URL encoding for special characters.
 
+### Debugging Links
+
+The extension provides a debug mode to help troubleshoot link matching and generation. To enable debugging:
+
+1. Open the Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux)
+2. Run the command `Pattern Links: Toggle Debug Mode`
+
+When debug mode is enabled:
+- Hovering over a link will show detailed information about:
+  - The matched text
+  - The rule that was applied
+  - The generated URI
+- Debug logs will be written to the Output panel (View > Output, select "Pattern Links" from the dropdown)
+- Links will still be clickable and function normally
+
+This is particularly useful when:
+- Your regex patterns aren't matching as expected
+- The generated URIs aren't what you expect
+- You want to understand which rule is being applied to a specific match
+
+To disable debug mode, run the `Pattern Links: Toggle Debug Mode` command again.
+
 ## Contributing
 
 1. Clone this repository
