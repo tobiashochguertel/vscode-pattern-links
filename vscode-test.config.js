@@ -1,15 +1,13 @@
-import * as path from 'path';
-import { defineConfig } from '@vscode/test-cli';
+const path = require('path');
+const { defineConfig } = require('@vscode/test-cli');
 
-export default defineConfig([
+module.exports = defineConfig([
     {
         label: 'unitTests',
         files: 'out/tests/tests/**/*.test.js',
         version: 'stable',
-        //   version: 'insiders',
-        //   workspaceFolder: './sampleWorkspace',
         args: [
-            '--user-data-dir', path.resolve(__dirname, 'test-user-data') // Use a clean user data directory
+            '--user-data-dir', path.resolve(__dirname, 'test-user-data')
         ],
         mocha: {
             ui: 'tdd',
