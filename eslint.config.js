@@ -17,7 +17,7 @@ module.exports = [
     rules: {
       "prefer-const": "off",
       "@typescript-eslint/explicit-function-return-type": "warn",
-      "@typescript-eslint/no-unused-vars": ["warn", { 
+      "@typescript-eslint/no-unused-vars": ["warn", {
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_"
       }],
@@ -27,7 +27,8 @@ module.exports = [
       "curly": "error",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/strict-boolean-expressions": "warn"
-    }
+    },
+    ignores: [".vscode-test/**", "out/**", "node_modules/**", "eslint.config.js"]
   },
   require("eslint-config-prettier")
 ];
