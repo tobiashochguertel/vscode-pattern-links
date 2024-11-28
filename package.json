@@ -82,7 +82,7 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "tests:compile": "tsc -p tsconfig.test.json",
-    "tests:run": "pnpm vscode-test",
+    "tests:run": "pnpm vscode-test --config ./vscode-test.config.ts",
     "tests": "pnpm clean:out:tests && pnpm tests:compile && pnpm tests:run",
     "package": "vsce package",
     "package:check": "pnpm pack",
