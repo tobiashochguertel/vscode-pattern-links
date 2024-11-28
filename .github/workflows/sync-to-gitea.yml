@@ -1,0 +1,270 @@
+name: Sync to Gitea
+
+on:
+  # Sync on push to any branch
+  push:
+    branches:
+      - '**'
+  # Sync on tag creation
+  create:
+    tags:
+      - 'v*'
+  # Sync when PRs are merged
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - master
+  # Sync when issues are modified
+  issues:
+    types: [opened, edited, deleted, closed, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited, deleted]
+  # Sync when PRs are modified
+  pull_request_target:
+    types: [opened, edited, closed, reopened, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+  milestone:
+    types: [created, edited, deleted, closed, reopened]
+  project:
+    types: [created, edited, deleted, closed]
+  project_card:
+    types: [created, edited, deleted, moved]
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  sync-code:
+    name: Sync Code to Gitea
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history and tags
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Sync Bot"
+          git config --global user.email "bot@github.com"
+      
+      - name: Add Gitea Remote
+        run: |
+          git remote add gitea "https://${{ secrets.GITEA_USERNAME }}:${{ secrets.GITEA_TOKEN }}@gitea.hochguertel.work/${{ secrets.GITEA_REPO }}.git"
+      
+      - name: Sync Branches
+        run: |
+          # Fetch all branches from Gitea
+          git fetch gitea
+
+          # Get list of local branches
+          for branch in $(git branch -r | grep 'origin/' | sed 's/origin\///'); do
+            if ! git show-ref --verify --quiet "refs/heads/$branch"; then
+              git checkout -b "$branch" "origin/$branch"
+            else
+              git checkout "$branch"
+              git pull origin "$branch"
+            fi
+            echo "Syncing branch: $branch"
+            git push -f gitea "$branch"
+          done
+      
+      - name: Sync Tags
+        if: github.event_name == 'create' && github.event.ref_type == 'tag'
+        run: |
+          git fetch --tags
+          git push gitea --tags
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          git remote remove gitea
+
+  sync-issues:
+    name: Sync Issues to Gitea
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issues' ||
+      github.event_name == 'issue_comment' ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Sync Issue
+        if: github.event_name == 'issues'
+        run: |
+          # Get issue details
+          TITLE="${{ github.event.issue.title }}"
+          BODY="${{ github.event.issue.body }}"
+          STATE="${{ github.event.issue.state }}"
+          LABELS="${{ join(github.event.issue.labels.*.name, ',') }}"
+          
+          # Create or update issue in Gitea
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "title": "'"$TITLE"'",
+              "body": "'"$BODY"'",
+              "state": "'"$STATE"'",
+              "labels": ["'"$LABELS"'"]
+            }' \
+            "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/issues"
+
+      - name: Sync Issue Comment
+        if: github.event_name == 'issue_comment'
+        run: |
+          # Get comment details
+          BODY="${{ github.event.comment.body }}"
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          
+          # Create comment in Gitea
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "body": "'"$BODY"'"
+            }' \
+            "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/issues/$ISSUE_NUMBER/comments"
+
+  sync-prs:
+    name: Sync PRs to Gitea
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request_target' ||
+      github.event_name == 'pull_request_review' ||
+      github.event_name == 'pull_request_review_comment' ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Sync Pull Request
+        if: github.event_name == 'pull_request_target'
+        run: |
+          # Get PR details
+          TITLE="${{ github.event.pull_request.title }}"
+          BODY="${{ github.event.pull_request.body }}"
+          HEAD="${{ github.event.pull_request.head.ref }}"
+          BASE="${{ github.event.pull_request.base.ref }}"
+          
+          # Create or update PR in Gitea
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "title": "'"$TITLE"'",
+              "body": "'"$BODY"'",
+              "head": "'"$HEAD"'",
+              "base": "'"$BASE"'"
+            }' \
+            "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/pulls"
+
+      - name: Sync PR Review
+        if: github.event_name == 'pull_request_review'
+        run: |
+          # Get review details
+          BODY="${{ github.event.review.body }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          STATE="${{ github.event.review.state }}"
+          
+          # Create review in Gitea
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "body": "'"$BODY"'",
+              "state": "'"$STATE"'"
+            }' \
+            "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/pulls/$PR_NUMBER/reviews"
+
+  sync-milestones:
+    name: Sync Milestones to Gitea
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'milestone' ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Fetch GitHub Milestones
+        id: fetch-milestones
+        run: |
+          MILESTONES=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/milestones?state=all")
+          echo "::set-output name=milestones::$MILESTONES"
+
+      - name: Sync Milestones
+        run: |
+          # Parse milestones JSON
+          echo '${{ steps.fetch-milestones.outputs.milestones }}' | jq -c '.[]' | while read -r milestone; do
+            TITLE=$(echo $milestone | jq -r '.title')
+            DESCRIPTION=$(echo $milestone | jq -r '.description')
+            DUE_DATE=$(echo $milestone | jq -r '.due_on')
+            STATE=$(echo $milestone | jq -r '.state')
+            
+            # Create or update milestone in Gitea
+            curl -X POST \
+              -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"title\": \"$TITLE\",
+                \"description\": \"$DESCRIPTION\",
+                \"due_on\": \"$DUE_DATE\",
+                \"state\": \"$STATE\"
+              }" \
+              "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/milestones"
+          done
+
+  sync-projects:
+    name: Sync Project Boards to Gitea
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'project' ||
+      github.event_name == 'project_card' ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Fetch GitHub Projects
+        id: fetch-projects
+        run: |
+          PROJECTS=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.inertia-preview+json" \
+            "https://api.github.com/repos/${{ github.repository }}/projects")
+          echo "::set-output name=projects::$PROJECTS"
+
+      - name: Sync Projects
+        run: |
+          echo '${{ steps.fetch-projects.outputs.projects }}' | jq -c '.[]' | while read -r project; do
+            NAME=$(echo $project | jq -r '.name')
+            BODY=$(echo $project | jq -r '.body')
+            
+            # Create project in Gitea
+            PROJECT_ID=$(curl -X POST \
+              -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"title\": \"$NAME\",
+                \"description\": \"$BODY\"
+              }" \
+              "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/projects" | jq -r '.id')
+            
+            # Fetch and sync columns
+            COLUMNS=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.inertia-preview+json" \
+              "https://api.github.com/projects/$PROJECT_ID/columns")
+            
+            echo "$COLUMNS" | jq -c '.[]' | while read -r column; do
+              COLUMN_NAME=$(echo $column | jq -r '.name')
+              
+              # Create column in Gitea project
+              curl -X POST \
+                -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "{
+                  \"title\": \"$COLUMN_NAME\"
+                }" \
+                "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/projects/$PROJECT_ID/columns"
+            done
+          done

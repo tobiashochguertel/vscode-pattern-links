@@ -7,12 +7,76 @@
       "problemMatcher": "$tsc-watch",
       "isBackground": true,
       "presentation": {
-        "reveal": "never"
+        "reveal": "never",
+        "panel": "dedicated"
       },
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "label": "Watch & Compile"
+    },
+    {
+      "type": "npm",
+      "script": "test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": [ "$tsc", "$mocha" ],
+      "label": "Run Tests"
+    },
+    {
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": [ "$eslint-stylish" ],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      },
+      "label": "Lint"
+    },
+    {
+      "type": "npm",
+      "script": "compile",
+      "group": "build",
+      "problemMatcher": [ "$tsc" ],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      },
+      "label": "Compile"
+    },
+    {
+      "type": "shell",
+      "command": "pnpm",
+      "args": [ "package:analyze" ],
+      "problemMatcher": [ ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "label": "Analyze Package"
+    },
+    {
+      "label": "Watch Tests",
+      "type": "shell",
+      "command": "pnpm",
+      "args": [ "mocha", "--watch" ],
+      "isBackground": true,
+      "problemMatcher": [ "$mocha" ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "group": "test"
     }
   ]
 }

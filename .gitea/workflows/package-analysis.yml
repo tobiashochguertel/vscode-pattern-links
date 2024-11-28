@@ -1,0 +1,78 @@
+name: Package Analysis
+run-name: Package Analysis
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.vscode/**'
+  pull_request:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.vscode/**'
+  manual: true  # Equivalent to workflow_dispatch in GitHub Actions
+
+jobs:
+  analyze:
+    name: Analyze Package
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install pnpm
+        run: |
+          curl -fsSL https://get.pnpm.io/install.sh | sh -
+          export PNPM_HOME="$HOME/.local/share/pnpm"
+          export PATH="$PNPM_HOME:$PATH"
+      
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+
+      - name: Run package size check
+        run: |
+          echo "Package Size Analysis:"
+          echo "===================="
+          pnpm run package:size
+
+      - name: Run package content check
+        run: |
+          echo "Package Content Analysis:"
+          echo "======================"
+          pnpm run package:list
+
+      - name: Run detailed analysis
+        run: |
+          echo "Detailed Package Analysis:"
+          echo "======================"
+          pnpm run package:analyze
+
+      - name: Check package size threshold
+        run: |
+          SIZE=$(pnpm pack --dry-run 2>&1 | grep "package size:" | awk '{print $3}' | sed 's/kB//')
+          THRESHOLD=1000
+          
+          if [ $(echo "$SIZE > $THRESHOLD" | bc -l) -eq 1 ]; then
+            echo "::warning::Package size ($SIZE KB) exceeds threshold of $THRESHOLD KB"
+          else
+            echo "Package size ($SIZE KB) is within threshold of $THRESHOLD KB"
+          fi

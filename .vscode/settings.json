@@ -1,5 +1,84 @@
 {
+  // TypeScript settings
   "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.format.enable": false, // We use Prettier instead
+  
+  // Editor settings
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.organizeImports": true
+  },
+  "editor.rulers": [80, 120],
+  
+  // Testing
+  "jest.enable": false,
+  "mochaExplorer.files": "src/test/**/*.ts",
+  "mochaExplorer.require": "ts-node/register",
+  "mochaExplorer.timeout": 10000,
+  
+  // ESLint
+  "eslint.validate": [
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.format.enable": true,
+  
+  // Prettier
+  "prettier.requireConfig": true,
+  "prettier.configPath": ".prettierrc",
+  
+  // File handling
+  "files.exclude": {
+    "out": false,
+    "dist": false,
+    "**/*.js": { "when": "$(basename).ts" }
+  },
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  
+  // Search settings
+  "search.exclude": {
+    "out": true,
+    "dist": true,
+    "**/node_modules": true,
+    "**/*.js": { "when": "$(basename).ts" }
+  },
+  
+  // Markdown
+  "markdown.preview.breaks": true,
+  "markdownlint.config": {
+    "MD024": false, // Allow same headings
+    "MD033": false  // Allow inline HTML
+  },
+  
+  // Spell Checker
+  "cSpell.words": [
+    "vscode",
+    "patternlinks"
+  ],
+  "cSpell.ignorePaths": [
+    "package-lock.json",
+    "node_modules",
+    "dist",
+    "out"
+  ],
+  
+  // EditorConfig
+  "editorconfig.generateAuto": false,
+  
+  // Git
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  
+  // Debug
+  "debug.internalConsoleOptions": "neverOpen",
+  "debug.toolBarLocation": "docked",
+  
+  // Terminal
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.scrollback": 10000
 }

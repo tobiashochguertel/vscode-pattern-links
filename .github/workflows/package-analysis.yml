@@ -1,0 +1,90 @@
+name: Package Analysis
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.vscode/**'
+  pull_request:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.vscode/**'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  analyze:
+    name: Analyze Package
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run package size check
+        id: size-check
+        run: |
+          echo "Package Size Analysis:" >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+          pnpm run package:size >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run package content check
+        id: content-check
+        run: |
+          echo "Package Content Analysis:" >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+          pnpm run package:list >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run detailed analysis
+        id: detailed-analysis
+        run: |
+          echo "Detailed Package Analysis:" >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+          pnpm run package:analyze >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check package size threshold
+        run: |
+          # Get package size in KB
+          SIZE=$(pnpm pack --dry-run 2>&1 | grep "package size:" | awk '{print $3}' | sed 's/kB//')
+          
+          # Set threshold to 1000KB (1MB)
+          THRESHOLD=1000
+          
+          if [ $(echo "$SIZE > $THRESHOLD" | bc -l) -eq 1 ]; then
+            echo "::warning::Package size ($SIZE KB) exceeds threshold of $THRESHOLD KB"
+          else
+            echo "Package size ($SIZE KB) is within threshold of $THRESHOLD KB"
+          fi

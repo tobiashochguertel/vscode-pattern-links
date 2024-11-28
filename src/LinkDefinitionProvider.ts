@@ -36,7 +36,7 @@ export class LinkDefinitionProvider implements vscode.DocumentLinkProvider {
       // - \$1 with $1 (respect escape character)
       // - ...etc
       const url = this.targetTemplate
-        .replace(/(^|[^\\])\$(\d)/g, (indexMatch, nonEscapeChar, index) => {
+        .replace(/(^|[^\\])\$(\d)/g, (nonEscapeChar, index) => {
           return (
             nonEscapeChar +
             ((match as RegExpExecArray)[Number(index)] ?? `$${index}`)

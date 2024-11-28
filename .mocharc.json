@@ -1,0 +1,15 @@
+{
+  "require": ["ts-node/register"],
+  "spec": ["src/test/**/*.ts"],
+  "watch-files": ["src/**/*.ts"],
+  "timeout": 10000,
+  "recursive": true,
+  "extension": ["ts"],
+  "reporter": "spec",
+  "ui": "bdd",
+  "colors": true,
+  "exit": true,
+  "parallel": false,
+  "watch": false,
+  "ignore": ["node_modules", ".vscode-test", "out"]
+}

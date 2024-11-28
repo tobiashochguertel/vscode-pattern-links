@@ -1,0 +1,290 @@
+name: Sync to GitHub
+run-name: Sync to GitHub
+
+on:
+  # Sync on push to any branch
+  push:
+    branches:
+      - '**'
+  # Sync on tag creation
+  create:
+    tags:
+      - 'v*'
+  # Sync when issues are modified
+  issues:
+    types: [opened, edited, deleted, closed, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited, deleted]
+  # Sync when PRs are modified
+  pull_request:
+    types: [opened, edited, closed, reopened, labeled, unlabeled]
+  pull_request_comment:
+    types: [created, edited, deleted]
+  # Sync when milestones are modified
+  milestone:
+    types: [created, edited, deleted, closed]
+  # Sync when project boards are modified
+  project:
+    types: [created, edited, deleted]
+  project_card:
+    types: [created, edited, deleted, moved]
+  # Allow manual trigger
+  manual: true
+
+jobs:
+  sync-code:
+    name: Sync Code to GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history and tags
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "Gitea Sync Bot"
+          git config --global user.email "bot@gitea.local"
+      
+      - name: Add GitHub Remote
+        run: |
+          git remote add github "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ secrets.GITHUB_REPO }}.git"
+      
+      - name: Sync Branches
+        run: |
+          # Fetch all branches from GitHub
+          git fetch github
+
+          # Get list of local branches
+          for branch in $(git branch -r | grep 'origin/' | sed 's/origin\///'); do
+            if ! git show-ref --verify --quiet "refs/heads/$branch"; then
+              git checkout -b "$branch" "origin/$branch"
+            else
+              git checkout "$branch"
+              git pull origin "$branch"
+            fi
+            echo "Syncing branch: $branch"
+            git push github "$branch"
+          done
+      
+      - name: Sync Tags
+        if: github.event_name == 'create' && github.event.ref_type == 'tag'
+        run: |
+          git fetch --tags
+          git push github --tags
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          git remote remove github
+
+  sync-issues:
+    name: Sync Issues to GitHub
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issues' ||
+      github.event_name == 'issue_comment'
+
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh
+
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" > token.txt
+          gh auth login --with-token < token.txt
+          rm token.txt
+
+      - name: Sync Issue
+        if: github.event_name == 'issues'
+        run: |
+          # Get issue details
+          TITLE="${{ github.event.issue.title }}"
+          BODY="${{ github.event.issue.body }}"
+          STATE="${{ github.event.issue.state }}"
+          LABELS="${{ join(github.event.issue.labels.*.name, ',') }}"
+          
+          # Create issue using GitHub CLI
+          gh issue create \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --repo "${{ secrets.GITHUB_REPO }}" \
+            ${LABELS:+--label "$LABELS"}
+          
+          if [ "$STATE" = "closed" ]; then
+            gh issue close --repo "${{ secrets.GITHUB_REPO }}" "$NUMBER"
+          fi
+
+      - name: Sync Issue Comment
+        if: github.event_name == 'issue_comment'
+        run: |
+          # Get comment details
+          BODY="${{ github.event.comment.body }}"
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          
+          # Add comment using GitHub CLI
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "${{ secrets.GITHUB_REPO }}" \
+            --body "$BODY"
+
+  sync-prs:
+    name: Sync PRs to GitHub
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      github.event_name == 'pull_request_comment'
+
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh
+
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" > token.txt
+          gh auth login --with-token < token.txt
+          rm token.txt
+
+      - name: Sync Pull Request
+        if: github.event_name == 'pull_request'
+        run: |
+          # Get PR details
+          TITLE="${{ github.event.pull_request.title }}"
+          BODY="${{ github.event.pull_request.body }}"
+          HEAD="${{ github.event.pull_request.head.ref }}"
+          BASE="${{ github.event.pull_request.base.ref }}"
+          
+          # Create PR using GitHub CLI
+          gh pr create \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --repo "${{ secrets.GITHUB_REPO }}" \
+            --head "$HEAD" \
+            --base "$BASE"
+
+      - name: Sync PR Comment
+        if: github.event_name == 'pull_request_comment'
+        run: |
+          # Get comment details
+          BODY="${{ github.event.comment.body }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          
+          # Add comment using GitHub CLI
+          gh pr comment "$PR_NUMBER" \
+            --repo "${{ secrets.GITHUB_REPO }}" \
+            --body "$BODY"
+
+  sync-milestones:
+    name: Sync Milestones to GitHub
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'milestone' ||
+      github.event_name == 'manual'
+
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh
+
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" > token.txt
+          gh auth login --with-token < token.txt
+          rm token.txt
+
+      - name: Fetch Gitea Milestones
+        id: fetch-milestones
+        run: |
+          MILESTONES=$(curl -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/milestones?state=all")
+          echo "::set-output name=milestones::$MILESTONES"
+
+      - name: Sync Milestones
+        run: |
+          # Parse milestones JSON and create in GitHub
+          echo '${{ steps.fetch-milestones.outputs.milestones }}' | jq -c '.[]' | while read -r milestone; do
+            TITLE=$(echo $milestone | jq -r '.title')
+            DESCRIPTION=$(echo $milestone | jq -r '.description')
+            DUE_DATE=$(echo $milestone | jq -r '.due_date')
+            STATE=$(echo $milestone | jq -r '.state')
+            
+            # Create milestone using GitHub CLI
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              "/repos/${{ secrets.GITHUB_REPO }}/milestones" \
+              -f title="$TITLE" \
+              -f description="$DESCRIPTION" \
+              -f due_on="$DUE_DATE" \
+              -f state="$STATE"
+          done
+
+  sync-projects:
+    name: Sync Project Boards to GitHub
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'project' ||
+      github.event_name == 'project_card' ||
+      github.event_name == 'manual'
+
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh
+
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" > token.txt
+          gh auth login --with-token < token.txt
+          rm token.txt
+
+      - name: Fetch Gitea Projects
+        id: fetch-projects
+        run: |
+          PROJECTS=$(curl -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+            "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/projects")
+          echo "::set-output name=projects::$PROJECTS"
+
+      - name: Sync Projects
+        run: |
+          echo '${{ steps.fetch-projects.outputs.projects }}' | jq -c '.[]' | while read -r project; do
+            NAME=$(echo $project | jq -r '.title')
+            BODY=$(echo $project | jq -r '.description')
+            
+            # Create project using GitHub CLI
+            PROJECT_ID=$(gh api \
+              --method POST \
+              -H "Accept: application/vnd.github.inertia-preview+json" \
+              "/repos/${{ secrets.GITHUB_REPO }}/projects" \
+              -f name="$NAME" \
+              -f body="$BODY" | jq -r '.id')
+            
+            # Fetch and sync columns
+            COLUMNS=$(curl -H "Authorization: token ${{ secrets.GITEA_TOKEN }}" \
+              "${{ secrets.GITEA_API_URL }}/repos/${{ secrets.GITEA_REPO }}/projects/$project/columns")
+            
+            echo "$COLUMNS" | jq -c '.[]' | while read -r column; do
+              COLUMN_NAME=$(echo $column | jq -r '.name')
+              
+              # Create column using GitHub CLI
+              gh api \
+                --method POST \
+                -H "Accept: application/vnd.github.inertia-preview+json" \
+                "/projects/$PROJECT_ID/columns" \
+                -f name="$COLUMN_NAME"
+            done
+          done

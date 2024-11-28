@@ -20,11 +20,11 @@ suite("LinkDefinitionProvider", () => {
     ).provideDocumentLinks(document);
     assert.equal(links?.length, 2);
     assert.equal(
-      links?.[0].target?.toString(true),
+      links?.[0]?.target?.toString(true),
       "https://example.com/FOO-123"
     );
     assert.equal(
-      links?.[1].target?.toString(true),
+      links?.[1]?.target?.toString(true),
       "https://example.com/FOO-0"
     );
   });
@@ -37,11 +37,11 @@ suite("LinkDefinitionProvider", () => {
     ).provideDocumentLinks(document);
     assert.equal(links?.length, 3);
     assert.equal(
-      links?.[0].target?.toString(true),
+      links?.[0]?.target?.toString(true),
       "https://example.com/FOO/123?foo=bar"
     );
     assert.equal(
-      links?.[2].target?.toString(true),
+      links?.[2]?.target?.toString(true),
       "https://example.com/BAR/3?foo=bar"
     );
   });
@@ -54,11 +54,11 @@ suite("LinkDefinitionProvider", () => {
     ).provideDocumentLinks(document);
     assert.equal(links?.length, 3);
     assert.equal(
-      links?.[0].target?.toString(true),
+      links?.[0]?.target?.toString(true),
       "https://example.com/$1/123?foo=bar"
     );
     assert.equal(
-      links?.[2].target?.toString(true),
+      links?.[2]?.target?.toString(true),
       "https://example.com/$1/3?foo=bar"
     );
   });
@@ -71,7 +71,7 @@ suite("LinkDefinitionProvider", () => {
     ).provideDocumentLinks(document);
     assert.equal(links?.length, 3);
     assert.equal(
-      links?.[0].target?.toString(true),
+      links?.[0]?.target?.toString(true),
       "https://example.com/FOO/$4"
     );
   });
@@ -94,11 +94,11 @@ suite("LinkDefinitionProvider", () => {
       ).provideDocumentLinks(document);
       assert.equal(links?.length, 2);
       assert.equal(
-        links?.[0].target?.toString(true),
+        links?.[0]?.target?.toString(true),
         "https://example.com/BAR/3"
       );
       assert.equal(
-        links?.[1].target?.toString(true),
+        links?.[1]?.target?.toString(true),
         "https://example.com/bar/72"
       );
     });
@@ -122,7 +122,7 @@ suite("LinkDefinitionProvider", () => {
       // Combined flags
       assert.equal((await testWithFlag("is"))?.length, 1);
       assert.equal(
-        (await testWithFlag("is"))?.[0].target?.toString(true),
+        (await testWithFlag("is"))?.[0]?.target?.toString(true),
         "https://example.com/some stuff\nnewline\nandmore"
       );
     });
