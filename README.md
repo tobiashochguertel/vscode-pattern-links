@@ -4,6 +4,8 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/TobiasHochgurtel/vscode-pattern-links/sync-to-gitea.yml?label=GitHub%20→%20Gitea&logo=gitea)](https://github.com/TobiasHochgurtel/vscode-pattern-links/actions/workflows/sync-to-gitea.yml)
 [![Gitea Status](https://img.shields.io/badge/dynamic/json?url=https://gitea.hochguertel.work/api/v1/repos/TobiasHochgurtel/vscode-pattern-links/actions/workflows/sync-to-github.yml/latest&query=$.status&label=Gitea%20→%20GitHub&logo=gitea)](https://gitea.hochguertel.work/TobiasHochgurtel/vscode-pattern-links/actions?query=workflow%3A"Sync+to+GitHub")
 
+> **Note**: This is a fork of [dlevs/vscode-pattern-links](https://github.com/dlevs/vscode-pattern-links) with additional features and improvements.
+
 **Link Patterns** is a VS Code extension that automatically turns text into links based upon regex patterns.
 
 ![Animated gif showing a code comment that has a link that can be clicked](assets/usage.gif)
