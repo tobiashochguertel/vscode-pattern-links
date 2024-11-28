@@ -162,12 +162,14 @@ Note: The extension properly handles spaces in file paths, automatically encodin
 The extension provides special handling for `file://` URLs to ensure proper path resolution and encoding:
 
 1. **Absolute Paths**: When using absolute paths (starting with `/`), special characters like spaces are automatically encoded:
-   ```
+
+   ```text
    file:///path/with spaces/file.txt  →  file:///path/with%20spaces/file.txt
    ```
 
 2. **Relative Paths**: When using relative paths (starting with `.` or `..`), the path structure is preserved:
-   ```
+
+   ```text
    file://./relative/path.txt  →  file://./relative/path.txt
    file://../parent/path.txt   →  file://../parent/path.txt
    ```
@@ -184,6 +186,7 @@ The extension provides a debug mode to help troubleshoot link matching and gener
 2. Run the command `Pattern Links: Toggle Debug Mode`
 
 When debug mode is enabled:
+
 - Hovering over a link will show detailed information about:
   - The matched text
   - The rule that was applied
@@ -192,6 +195,7 @@ When debug mode is enabled:
 - Links will still be clickable and function normally
 
 This is particularly useful when:
+
 - Your regex patterns aren't matching as expected
 - The generated URIs aren't what you expect
 - You want to understand which rule is being applied to a specific match
