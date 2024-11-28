@@ -8,10 +8,6 @@
 
 ![Animated gif showing a code comment that has a link that can be clicked](assets/usage.gif)
 
-## Status
-
-This project is no longer actively maintained. Its spiritual successor is [Regex Robin](https://github.com/dlevs/vscode-regex-robin), which does everything this extension does, and more.
-
 ## Configuration
 
 Multiple patterns can be defined in your VS Code settings. The following examples highlight common use cases.
@@ -77,6 +73,70 @@ just works like this by default.
 
 TODO: Register only one `LinkDefinitionProvider`, which returns a maximum of one link per text range.
  -->
+
+### File URL Examples
+
+You can create clickable links to local files using various patterns. Here are some examples:
+
+#### Basic File Links
+
+```jsonc
+{
+  "patternlinks.rules": [
+    {
+      "linkPattern": "file://(/[^ \\n]+)",
+      "linkTarget": "file://$1",
+      "description": "Convert file:// URLs to clickable links"
+    }
+  ]
+}
+```
+
+#### JSDoc @document Tags
+
+```jsonc
+{
+  "patternlinks.rules": [
+    {
+      "linkPattern": "@document (.*?)(?=\\s|$)",
+      "linkTarget": "file://$1",
+      "description": "Convert @document tags to file links"
+    }
+  ]
+}
+```
+
+Example usage in code:
+
+```typescript
+/**
+ * Some documentation
+ * @document ../../../../external-repositories/docs/api.md
+ */
+```
+
+#### Relative Path Links
+
+```jsonc
+{
+  "patternlinks.rules": [
+    {
+      "linkPattern": "file://(\\.[^ \\n]+)",
+      "linkTarget": "file://$1",
+      "description": "Convert relative file paths to clickable links"
+    }
+  ]
+}
+```
+
+Example usage:
+
+```typescript
+// See documentation at file://./docs/README.md
+// Or parent directory: file://../other-project/README.md
+```
+
+Note: The extension properly handles spaces in file paths, automatically encoding them as `%20` in the URL.
 
 ## Contributing
 
