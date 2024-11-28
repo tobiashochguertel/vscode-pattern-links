@@ -23,20 +23,10 @@
   "repository": {
     "url": "https://github.com/TobiasHochgurtel/vscode-pattern-links"
   },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
   "icon": "assets/icon.png",
-  "keywords": [
-    "link",
-    "pattern",
-    "regex",
-    "auto",
-    "autolink"
-  ],
+  "keywords": ["link", "pattern", "regex", "auto", "autolink"],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -47,10 +37,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "linkPattern",
-              "linkTarget"
-            ],
+            "required": ["linkPattern", "linkTarget"],
             "properties": {
               "linkPattern": {
                 "type": "string",
@@ -90,6 +77,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "watch": "tsc -watch -p ./",
     "test": "node ./node_modules/@vscode/test-electron/out/runTest.js --extensionDevelopmentPath=./ --extensionTestsPath=./out/test/suite",
+    "package": "vsce package",
     "package:check": "pnpm pack --dry-run",
     "package:size": "pnpm pack --dry-run 2>&1 | grep -A 1 \"package size\" || true",
     "package:list": "pnpm pack --dry-run 2>&1 | grep \"^[^D].*\\.js\\|.*\\.json\\|.*\\.d\\.ts\\|.*\\.md\" || true",
