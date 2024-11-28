@@ -1,10 +1,19 @@
 import * as vscode from "vscode";
 import { EXTENSION_NAME, getConfig } from "./config";
 import { LinkDefinitionProvider } from "./LinkDefinitionProvider";
+import { FileUrlLinkDefinitionProvider } from "./FileUrlLinkDefinitionProvider";
+import { debugManager } from './debug';
 
 let activeRules: vscode.Disposable[] = [];
 
 export function activate(context: vscode.ExtensionContext): void {
+  // Register debug command
+  const debugCommand = vscode.commands.registerCommand('pattern-links.toggleDebug', () => {
+    debugManager.toggleDebug();
+  });
+
+  context.subscriptions.push(debugCommand);
+
   initFromConfig(context);
 
   vscode.workspace.onDidChangeConfiguration((event) => {
@@ -22,13 +31,21 @@ function initFromConfig(context: vscode.ExtensionContext): void {
   }
 
   activeRules = config.rules.map((rule) => {
+    const provider = rule.linkPattern.startsWith('file://') || rule.linkTarget.startsWith('file://')
+      ? new FileUrlLinkDefinitionProvider(
+          rule.linkPattern,
+          rule.linkPatternFlags,
+          rule.linkTarget
+        )
+      : new LinkDefinitionProvider(
+          rule.linkPattern,
+          rule.linkPatternFlags,
+          rule.linkTarget
+        );
+
     return vscode.languages.registerDocumentLinkProvider(
-      rule.languages.map((language) => ({ language })),
-      new LinkDefinitionProvider(
-        rule.linkPattern,
-        rule.linkPatternFlags,
-        rule.linkTarget
-      )
+      rule.languages?.map((language) => ({ language })) ?? [{ scheme: 'file' }],
+      provider
     );
   });
 

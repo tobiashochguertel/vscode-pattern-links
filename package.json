@@ -69,7 +69,14 @@
           "markdownDescription": "A list of rules for turning text into clickable links."
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "pattern-links.toggleDebug",
+        "title": "Pattern Links: Toggle Debug Mode",
+        "category": "Pattern Links"
+      }
+    ]
   },
   "scripts": {
     "clean:out": "del ./out/**",
@@ -78,10 +85,10 @@
     "compile": "npm run clean:out && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
+    "lint": "eslint src",
+    "test": "npm run tests",
     "tests:compile": "tsc -p tsconfig.test.json",
-    "tests:run": "npm exec vscode-test --config ./vscode-test.config.js",
+    "tests:run": "npm exec vscode-test --config ./.vscode-test.js",
     "tests": "npm run clean:out:tests && npm run tests:compile && npm run tests:run",
     "package": "npm run compile && vsce package",
     "package:check": "npm pack",
@@ -100,13 +107,13 @@
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.16",
     "@types/vscode": "^1.85.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.16.0",
+    "@typescript-eslint/parser": "^8.16.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.2.1",
     "del-cli": "^6.0.0",
-    "eslint": "^9.0.0-alpha.0",
+    "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.10",
     "mocha": "^10.2.0",

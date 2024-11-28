@@ -19,7 +19,6 @@ module.exports = defineConfig([
             'files.autoSave': 'off',
             'editor.minimap.enabled': false,
             'workbench.editor.enablePreview': false,
-            'window.menuBarVisibility': 'classic'
         }
     }
 ]);

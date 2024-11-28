@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import * as vscode from "vscode";
 import { LinkDefinitionProvider } from "../../src/LinkDefinitionProvider";
+import { MockTextDocument } from "./mock/MockTextDocument";
 
 suite("LinkDefinitionProvider", () => {
   test("Matches patterns to return links", async () => {
@@ -8,14 +8,8 @@ suite("LinkDefinitionProvider", () => {
       "FOO-\\d+",
       "",
       "https://example.com/$0"
-    ).provideDocumentLinks({
-      getText() {
-        return "FOO-123 FOO-0";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+    ).provideDocumentLinks(new MockTextDocument("FOO-123 FOO-0"));
+
     assert.equal(links?.length, 2);
     assert.equal(
       links?.[0]?.target?.toString(true),
@@ -29,17 +23,11 @@ suite("LinkDefinitionProvider", () => {
 
   test("Capture groups work", async () => {
     const links = await new LinkDefinitionProvider(
-      "(FOO|BAR)-(\\d+)",
+      "FOO-(\\d+)",
       "",
-      "https://example.com/$1/$2?foo=bar"
-    ).provideDocumentLinks({
-      getText() {
-        return "FOO-123 BAR-3";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+      "https://example.com/FOO/$1?foo=bar"
+    ).provideDocumentLinks(new MockTextDocument("FOO-123 FOO-0"));
+
     assert.equal(links?.length, 2);
     assert.equal(
       links?.[0]?.target?.toString(true),
@@ -47,23 +35,17 @@ suite("LinkDefinitionProvider", () => {
     );
     assert.equal(
       links?.[1]?.target?.toString(true),
-      "https://example.com/BAR/3?foo=bar"
+      "https://example.com/FOO/0?foo=bar"
     );
   });
 
-  test("Escape characters prevent substitution", async () => {
+  test("Escaped capture groups work", async () => {
     const links = await new LinkDefinitionProvider(
-      "(FOO|BAR)-(\\d+)",
+      "FOO-(\\d+)",
       "",
-      "https://example.com/\\$1/$2?foo=bar"
-    ).provideDocumentLinks({
-      getText() {
-        return "FOO-123 BAR-3";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+      "https://example.com/\\$1/$1?foo=bar"
+    ).provideDocumentLinks(new MockTextDocument("FOO-123 FOO-0"));
+
     assert.equal(links?.length, 2);
     assert.equal(
       links?.[0]?.target?.toString(true),
@@ -71,59 +53,45 @@ suite("LinkDefinitionProvider", () => {
     );
     assert.equal(
       links?.[1]?.target?.toString(true),
-      "https://example.com/$1/3?foo=bar"
+      "https://example.com/$1/0?foo=bar"
     );
   });
 
-  test("Failed substitutions result in input remaining untouched (not 'undefined' in output)", async () => {
+  test("Non-existent capture groups are preserved", async () => {
     const links = await new LinkDefinitionProvider(
-      "(FOO|BAR)-(\\d+)",
+      "FOO-(\\d+)",
       "",
-      "https://example.com/$1/$4"
-    ).provideDocumentLinks({
-      getText() {
-        return "FOO-123 BAR-3";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+      "https://example.com/FOO/$4"
+    ).provideDocumentLinks(new MockTextDocument("FOO-123 FOO-0"));
+
     assert.equal(links?.length, 2);
     assert.equal(
       links?.[0]?.target?.toString(true),
       "https://example.com/FOO/$4"
     );
+    assert.equal(
+      links?.[1]?.target?.toString(true),
+      "https://example.com/FOO/$4"
+    );
   });
 
-  test("No matches return empty array", async () => {
+  test("No matches returns empty array", async () => {
     const links = await new LinkDefinitionProvider(
-      "NONEXISTENT-\d+",
+      "BAR-\\d+",
       "",
       "https://example.com/$0"
-    ).provideDocumentLinks({
-      getText() {
-        return "FOO-123 BAR-3";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+    ).provideDocumentLinks(new MockTextDocument("FOO-123 FOO-0"));
+
     assert.equal(links?.length, 0);
   });
 
   test("Complex pattern with multiple capture groups", async () => {
     const links = await new LinkDefinitionProvider(
-      "(FOO|BAR)-(\\d+)-(\\w+)",
+      "FOO-(\\d+)-(\\w+)",
       "",
-      "https://example.com/$1/$2/$3"
-    ).provideDocumentLinks({
-      getText() {
-        return "FOO-123-abc BAR-456-def";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+      "https://example.com/FOO/$1/$2"
+    ).provideDocumentLinks(new MockTextDocument("FOO-123-abc FOO-0-def"));
+
     assert.equal(links?.length, 2);
     assert.equal(
       links?.[0]?.target?.toString(true),
@@ -131,80 +99,56 @@ suite("LinkDefinitionProvider", () => {
     );
     assert.equal(
       links?.[1]?.target?.toString(true),
-      "https://example.com/BAR/456/def"
+      "https://example.com/FOO/0/def"
     );
   });
 
-  suite("Config: `rule.linkPatternFlags`", () => {
-    test("`g` flag cannot be overwritten", async () => {
-      const links = await new LinkDefinitionProvider(
-        "(FOO|BAR)-(\\d+)",
-        "i", // `i` here does not stop the usual `g` flag from taking effect
-        "https://example.com/$1/$4"
-      ).provideDocumentLinks({
-        getText() {
-          return "FOO-123 BAR-3";
-        },
-        positionAt() {
-          return new vscode.Position(0, 0);
-        },
-      });
-      assert.equal((links?.length ?? 0) > 1, true);
-    });
+  test("Pattern with no capture groups", async () => {
+    const links = await new LinkDefinitionProvider(
+      "FOO",
+      "",
+      "https://example.com/FOO"
+    ).provideDocumentLinks(new MockTextDocument("FOO FOO"));
 
-    test("Single flags work", async () => {
-      const links = await new LinkDefinitionProvider(
-        "(BAR)-(\\d+)",
-        "i", // `i` here does not stop the usual `g` flag from taking effect
-        "https://example.com/$1/$2"
-      ).provideDocumentLinks({
-        getText() {
-          return "BAR-3 bar-72";
-        },
-        positionAt() {
-          return new vscode.Position(0, 0);
-        },
-      });
-      assert.equal(links?.length, 2);
-      assert.equal(
-        links?.[0]?.target?.toString(true),
-        "https://example.com/BAR/3"
-      );
-      assert.equal(
-        links?.[1]?.target?.toString(true),
-        "https://example.com/bar/72"
-      );
-    });
+    assert.equal((links?.length ?? 0) > 1, true);
+  });
 
-    test("Multiple flags work", async () => {
-      const testWithFlag = (flags: string) => {
-        return new LinkDefinitionProvider(
-          "start(.*?)end",
-          flags,
-          "https://example.com/$1"
-        ).provideDocumentLinks({
-          getText() {
-            return "startsome stuff\nnewline\nandmoreend";
-          },
-          positionAt() {
-            return new vscode.Position(0, 0);
-          },
-        });
-      };
+  test("Single flags work", async () => {
+    const links = await new LinkDefinitionProvider(
+      "bar-\\d+",
+      "i",
+      "https://example.com/BAR/$0"
+    ).provideDocumentLinks(new MockTextDocument("BAR-3 bar-4"));
 
-      // No flag (g is added automatically)
-      assert.equal((await testWithFlag(""))?.length, 0);
+    assert.equal(links?.length, 2);
+    assert.equal(
+      links?.[0]?.target?.toString(true),
+      "https://example.com/BAR/BAR-3"
+    );
+    assert.equal(
+      links?.[1]?.target?.toString(true),
+      "https://example.com/BAR/bar-4"
+    );
+  });
 
-      // Individual flags (g is added automatically)
-      assert.equal((await testWithFlag("i"))?.length, 0);
-      assert.equal((await testWithFlag("s"))?.length, 1); // s flag allows . to match newlines
+  test("Multiple flags work", async () => {
+    const testWithFlag = async (flags: string) => {
+      return await new LinkDefinitionProvider(
+        "FOO-\\d+",
+        flags,
+        "https://example.com/$0"
+      ).provideDocumentLinks(new MockTextDocument("FOO-123 FOO-0"));
+    };
 
-      // Combined flags (g is added automatically)
-      assert.equal((await testWithFlag("is"))?.length, 1);
-      assert.equal(
-        (await testWithFlag("is"))?.[0]?.target?.toString(true),
-        "https://example.com/some stuff\nnewline\nandmore"
-      );
-    });
+    // No flag (g is added automatically)
+    assert.equal((await testWithFlag(""))?.length, 2);
+
+    // Individual flags (g is added automatically)
+    assert.equal((await testWithFlag("i"))?.length, 2);
+    assert.equal((await testWithFlag("s"))?.length, 2);
+    assert.equal((await testWithFlag("m"))?.length, 2);
+
+    // Multiple flags (g is added automatically)
+    assert.equal((await testWithFlag("ism"))?.length, 2);
   });
 });

@@ -1,16 +1,18 @@
 import * as vscode from "vscode";
 import type { PartialDeep } from "type-fest";
 
-interface Config {
-  rules: {
-    linkPattern: string;
-    linkPatternFlags: string;
-    linkTarget: string;
-    languages: string[];
-  }[];
+export const EXTENSION_NAME = "patternlinks";
+
+export interface Rule {
+  linkPattern: string;
+  linkPatternFlags?: string;
+  linkTarget: string;
+  languages?: string[];
 }
 
-export const EXTENSION_NAME = "patternlinks";
+export interface Config {
+  rules: Rule[];
+}
 
 export function getConfig(): Config {
   const config: PartialDeep<Config> =

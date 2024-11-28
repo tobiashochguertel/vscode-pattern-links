@@ -157,6 +157,25 @@ Example usage:
 
 Note: The extension properly handles spaces in file paths, automatically encoding them as `%20` in the URL.
 
+### File URL Handling
+
+The extension provides special handling for `file://` URLs to ensure proper path resolution and encoding:
+
+1. **Absolute Paths**: When using absolute paths (starting with `/`), special characters like spaces are automatically encoded:
+   ```
+   file:///path/with spaces/file.txt  →  file:///path/with%20spaces/file.txt
+   ```
+
+2. **Relative Paths**: When using relative paths (starting with `.` or `..`), the path structure is preserved:
+   ```
+   file://./relative/path.txt  →  file://./relative/path.txt
+   file://../parent/path.txt   →  file://../parent/path.txt
+   ```
+
+3. **Other URIs**: Non-file URLs (e.g., `http://`) are handled normally.
+
+This ensures that both absolute and relative file paths work correctly, while maintaining proper URL encoding for special characters.
+
 ## Contributing
 
 1. Clone this repository

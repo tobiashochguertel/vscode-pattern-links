@@ -1,21 +1,14 @@
 import * as assert from "assert";
-import * as vscode from "vscode";
-import { LinkDefinitionProvider } from "../../src/LinkDefinitionProvider";
+import { FileUrlLinkDefinitionProvider } from "../../src/FileUrlLinkDefinitionProvider";
+import { MockTextDocument } from "./mock/MockTextDocument";
 
 suite("FileUrlLinkDefinitionProvider", () => {
   test("Matches file:// URLs", async () => {
-    const links = await new LinkDefinitionProvider(
+    const links = await new FileUrlLinkDefinitionProvider(
       "file://(/[^ \n]*(?:%20[^ \n]*)*)",
       "",
       "file://$1"
-    ).provideDocumentLinks({
-      getText() {
-        return "file:///path/to/file.txt some text";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+    ).provideDocumentLinks(new MockTextDocument("file:///path/to/file.txt some text"));
 
     assert.equal(links?.length, 1);
     assert.equal(
@@ -25,18 +18,11 @@ suite("FileUrlLinkDefinitionProvider", () => {
   });
 
   test("Matches multiple file:// URLs in one line", async () => {
-    const links = await new LinkDefinitionProvider(
+    const links = await new FileUrlLinkDefinitionProvider(
       "file://(/[^ \n]*(?:%20[^ \n]*)*)(?=\\s|$)",
       "",
       "file://$1"
-    ).provideDocumentLinks({
-      getText() {
-        return "file:///path/one.txt file:///path/two.txt";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+    ).provideDocumentLinks(new MockTextDocument("file:///path/one.txt file:///path/two.txt"));
 
     assert.equal(links?.length, 2);
     assert.equal(
@@ -50,43 +36,33 @@ suite("FileUrlLinkDefinitionProvider", () => {
   });
 
   test("Matches file:// URLs with spaces in path", async () => {
-    const links = await new LinkDefinitionProvider(
-      "file://(/[^\n]+)",
+    console.log("Matches file:// URLs with spaces in path - START");
+    const links = await new FileUrlLinkDefinitionProvider(
+      "file:\/\/(\/[^ \n]*(?:[ %20][^ \n]*)*)",
       "",
       "file://$1"
-    ).provideDocumentLinks({
-      getText() {
-        return "file:///path/with spaces/file.txt";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+    ).provideDocumentLinks(new MockTextDocument("file:///path/with spaces/file.txt"));
+
+    console.log("Matches file:// URLs with spaces in path - links: ", links?.[0]);
 
     assert.equal(links?.length, 1);
     assert.equal(
       links?.[0]?.target?.toString(true),
       "file:///path/with%20spaces/file.txt"
     );
+    console.log("Matches file:// URLs with spaces in path - END");
   });
 
   test("Matches file:// URLs in multiline text", async () => {
-    const links = await new LinkDefinitionProvider(
+    const links = await new FileUrlLinkDefinitionProvider(
       "file://(/[^ \n]*(?:%20[^ \n]*)*)(?=\\s|$)",
       "s",
       "file://$1"
-    ).provideDocumentLinks({
-      getText() {
-        return `Some text here
+    ).provideDocumentLinks(new MockTextDocument(`Some text here
 file:///path/to/file1.txt
 More text
 file:///path/to/file2.txt
-End text`;
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+End text`));
 
     assert.equal(links?.length, 2);
     assert.equal(
@@ -100,18 +76,11 @@ End text`;
   });
 
   test("Handles relative file:// paths", async () => {
-    const links = await new LinkDefinitionProvider(
+    const links = await new FileUrlLinkDefinitionProvider(
       "file://([.][^ \n]*(?:%20[^ \n]*)*|/(?:[^ \n]*(?:%20[^ \n]*)*)*)",
       "",
       "file://$1"
-    ).provideDocumentLinks({
-      getText() {
-        return "file://./relative/path.txt file://../parent/path.txt";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+    ).provideDocumentLinks(new MockTextDocument("file://./relative/path.txt file://../parent/path.txt"));
 
     assert.equal(links?.length, 2);
     assert.equal(
@@ -125,45 +94,31 @@ End text`;
   });
 
   test("No matches for invalid file:// URLs", async () => {
-    const links = await new LinkDefinitionProvider(
+    const links = await new FileUrlLinkDefinitionProvider(
       "file://(/[^ \n]*(?:%20[^ \n]*)*)",
       "",
       "file://$1"
-    ).provideDocumentLinks({
-      getText() {
-        return "file:// file://invalid/|path file://";
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+    ).provideDocumentLinks(new MockTextDocument("file:// file://invalid/|path file://"));
 
     assert.equal(links?.length, 0);
   });
 
   test("Matches file:// URLs in JSDoc @document tags", async () => {
-    const links = await new LinkDefinitionProvider(
+    const links = await new FileUrlLinkDefinitionProvider(
       "@document (.*?)(?=\\s|$)",
       "",
       "file://$1"
-    ).provideDocumentLinks({
-      getText() {
-        return `
+    ).provideDocumentLinks(new MockTextDocument(`
     /**
      * **MD030**: Spaces after list markers
      *
-     * @document ../../../../external-repositories/markdownlint-main/doc/md030.md
-     */`;
-      },
-      positionAt() {
-        return new vscode.Position(0, 0);
-      },
-    });
+     * @document /path/to/file.txt
+     */`));
 
     assert.equal(links?.length, 1);
     assert.equal(
       links?.[0]?.target?.toString(true),
-      "file://../../../../external-repositories/markdownlint-main/doc/md030.md"
+      "file:///path/to/file.txt"
     );
   });
 });

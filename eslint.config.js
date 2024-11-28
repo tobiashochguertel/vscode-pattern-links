@@ -3,12 +3,13 @@ const tsParser = require("@typescript-eslint/parser");
 /** @type {import('eslint').Linter.Config} */
 module.exports = [
   {
+    files: ["**/*.ts"],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: "module",
-        project: "./tsconfig.json"
+        project: ["./tsconfig.json", "./tsconfig.test.json"]
       }
     },
     plugins: {
