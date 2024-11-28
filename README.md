@@ -1,4 +1,4 @@
-# Link Patterns
+# Link Patterns (Fork)
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/TobiasHochgurtel/vscode-pattern-links/package-analysis.yml?label=Analysis&logo=github)](https://github.com/TobiasHochgurtel/vscode-pattern-links/actions/workflows/package-analysis.yml)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/TobiasHochgurtel/vscode-pattern-links/sync-to-gitea.yml?label=GitHub%20→%20Gitea&logo=gitea)](https://github.com/TobiasHochgurtel/vscode-pattern-links/actions/workflows/sync-to-gitea.yml)
@@ -14,17 +14,17 @@
 
 You can install this extension in several ways:
 
-1. VS Code Marketplace: Search for `TobiasHochguertel.pattern-links`
+1. VS Code Marketplace: Search for `TobiasHochguertel.pattern-links-fork`
 2. Command Line:
 
    ```bash
-   code --install-extension TobiasHochguertel.pattern-links
+   code --install-extension TobiasHochguertel.pattern-links-fork
    ```
 
 3. VSIX File:
 
    ```bash
-   code --install-extension pattern-links-1.1.0.vsix
+   code --install-extension pattern-links-fork-1.1.0.vsix
    ```
 
 ## Configuration
