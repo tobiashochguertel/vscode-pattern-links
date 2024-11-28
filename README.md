@@ -10,6 +10,23 @@
 
 ![Animated gif showing a code comment that has a link that can be clicked](assets/usage.gif)
 
+## Installation
+
+You can install this extension in several ways:
+
+1. VS Code Marketplace: Search for `@hochguertel.work/pattern-links`
+2. Command Line:
+
+   ```bash
+   code --install-extension @hochguertel.work/pattern-links
+   ```
+
+3. VSIX File:
+
+   ```bash
+   code --install-extension pattern-links-1.1.0.vsix
+   ```
+
 ## Configuration
 
 Multiple patterns can be defined in your VS Code settings. The following examples highlight common use cases.
