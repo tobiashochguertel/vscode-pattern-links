@@ -8,6 +8,7 @@ export interface Rule {
   linkPatternFlags?: string;
   linkTarget: string;
   languages?: string[];
+  description?: string;  // Optional description of what the rule does
 }
 
 export interface Config {
@@ -25,6 +26,7 @@ export function getConfig(): Config {
         linkTarget,
         linkPatternFlags = "",
         languages = [],
+        description,
       } = rule ?? {};
 
       // If required values are missing, filter this entire
@@ -42,6 +44,7 @@ export function getConfig(): Config {
         linkPattern,
         linkTarget,
         linkPatternFlags,
+        description,
         // Remove null / undefined
         languages: languages.flatMap((language) => {
           return !language ? [] : language;

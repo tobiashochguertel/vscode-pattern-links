@@ -99,13 +99,17 @@ You can create clickable links to local files using various patterns. Here are s
 
 #### Basic File Links
 
+This rule converts absolute file:// URLs into clickable links:
+
 ```jsonc
 {
   "patternlinks.rules": [
     {
       "linkPattern": "file://(/[^ \\n]+)",
       "linkTarget": "file://$1",
-      "description": "Convert file:// URLs to clickable links"
+      "description": "Convert absolute file:// URLs to clickable links",
+      // Example: file:///path/to/file.txt -> clicks open /path/to/file.txt
+      "languages": ["plaintext", "markdown", "typescript", "javascript"]
     }
   ]
 }
@@ -113,13 +117,17 @@ You can create clickable links to local files using various patterns. Here are s
 
 #### JSDoc @document Tags
 
+This rule makes @document tags in comments clickable:
+
 ```jsonc
 {
   "patternlinks.rules": [
     {
       "linkPattern": "@document (.*?)(?=\\s|$)",
       "linkTarget": "file://$1",
-      "description": "Convert @document tags to file links"
+      "description": "Make @document tags in comments clickable",
+      // Example: @document ../api.md -> clicks open ../api.md
+      "languages": ["typescript", "javascript", "java"]
     }
   ]
 }
@@ -136,13 +144,17 @@ Example usage in code:
 
 #### Relative Path Links
 
+This rule makes relative file paths clickable:
+
 ```jsonc
 {
   "patternlinks.rules": [
     {
       "linkPattern": "file://(\\.[^ \\n]+)",
       "linkTarget": "file://$1",
-      "description": "Convert relative file paths to clickable links"
+      "description": "Make relative file paths clickable",
+      // Example: file://./docs/README.md -> clicks open ./docs/README.md
+      "languages": ["plaintext", "markdown", "typescript", "javascript"]
     }
   ]
 }
@@ -180,7 +192,11 @@ This ensures that both absolute and relative file paths work correctly, while ma
 
 ### Debugging Links
 
-The extension provides a debug mode to help troubleshoot link matching and generation. To enable debugging:
+The extension provides debug mode and file logging to help troubleshoot link matching and generation.
+
+#### Debug Mode
+
+To enable debugging:
 
 1. Open the Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux)
 2. Run the command `Pattern Links: Toggle Debug Mode`
@@ -194,13 +210,27 @@ When debug mode is enabled:
 - Debug logs will be written to the Output panel (View > Output, select "Pattern Links" from the dropdown)
 - Links will still be clickable and function normally
 
-This is particularly useful when:
+#### File Logging
+
+For persistent debugging, you can enable file logging:
+
+1. Open the Command Palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux)
+2. Run the command `Pattern Links: Toggle File Logging`
+
+When file logging is enabled:
+
+- Debug messages will be written to a log file in addition to the Output panel
+- The log file location will be shown in the Output panel when file logging is enabled
+- Log messages include timestamps and detailed information about link creation and pattern matching
+
+Note: File logging only writes messages when debug mode is also enabled.
+
+Debug mode and file logging are particularly useful when:
 
 - Your regex patterns aren't matching as expected
 - The generated URIs aren't what you expect
 - You want to understand which rule is being applied to a specific match
-
-To disable debug mode, run the `Pattern Links: Toggle Debug Mode` command again.
+- You need to track pattern matching behavior over time
 
 ## Contributing
 

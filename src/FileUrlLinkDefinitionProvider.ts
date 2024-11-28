@@ -1,5 +1,7 @@
 import { LinkDefinitionProvider } from "./LinkDefinitionProvider";
 import { Rule } from "./config";
+import { debugManager } from "./debug";
+import { TextProcessor } from "./utils/TextProcessor";
 
 export class FileUrlLinkDefinitionProvider extends LinkDefinitionProvider {
   constructor(pattern?: string, flags?: string, targetTemplate?: string) {
@@ -7,7 +9,9 @@ export class FileUrlLinkDefinitionProvider extends LinkDefinitionProvider {
   }
 
   protected override createUri(matchText: string, rule: Rule): string {
-    console.log(`[FileUrlLinkDefinitionProvider.createUri] Original matchText:`, matchText);
+    if (debugManager.isDebugEnabled()) {
+      debugManager.log(`[FileUrl] Original matchText: ${matchText}`);
+    }
 
     // Handle @document tag
     if (matchText.startsWith("@document")) {
@@ -15,7 +19,9 @@ export class FileUrlLinkDefinitionProvider extends LinkDefinitionProvider {
       if (!matchText.startsWith("file://")) {
         matchText = "file://" + matchText;
       }
-      console.log(`[FileUrlLinkDefinitionProvider.createUri] After @document handling:`, matchText);
+      if (debugManager.isDebugEnabled()) {
+        debugManager.log(`[FileUrl] After @document handling: ${matchText}`);
+      }
 
       // For @document tags, we want to return the file URI directly
       return matchText;
@@ -24,44 +30,75 @@ export class FileUrlLinkDefinitionProvider extends LinkDefinitionProvider {
     // Let the parent class handle capture group replacement
     const uri = super.createUri(matchText, rule);
     if (!uri) return "";
-    console.log(`[FileUrlLinkDefinitionProvider.createUri] After parent createUri:`, uri);
 
-    // Now encode any remaining spaces in the path part
-    const match = uri.match(/^(file:\/\/)(.*)$/);
-    console.log(`[FileUrlLinkDefinitionProvider.createUri] URI parts match:`, match);
+    if (debugManager.isDebugEnabled()) {
+      debugManager.log(`[FileUrl] After parent createUri: ${uri}`);
+    }
+
+    // Get cached RegExp for file URI pattern
+    const fileUriRegex = TextProcessor.getRegExp("^(file://)(.*?)$", "");
+    const match = uri.match(fileUriRegex);
+
+    if (debugManager.isDebugEnabled()) {
+      debugManager.log(`[FileUrl] URI parts match: ${JSON.stringify(match)}`);
+    }
 
     if (match?.length === 3) {
       const protocol = match[1] ?? "";
       let path = match[2] ?? "";
-      console.log(`[FileUrlLinkDefinitionProvider.createUri] Protocol:`, protocol);
-      console.log(`[FileUrlLinkDefinitionProvider.createUri] Path:`, path);
+
+      if (debugManager.isDebugEnabled()) {
+        debugManager.log(`[FileUrl] Protocol: ${protocol}`);
+        debugManager.log(`[FileUrl] Path: ${path}`);
+      }
 
       // First, decode any existing %20 to spaces to avoid double encoding
       path = decodeURIComponent(path);
-      console.log("[FileUrlLinkDefinitionProvider.createUri] Decoded path:", path);
+      if (debugManager.isDebugEnabled()) {
+        debugManager.log(`[FileUrl] Decoded path: ${path}`);
+      }
 
       // Then encode all special characters while preserving forward slashes
       const encodedPath = path.split('/').map(segment => {
-        console.log("[FileUrlLinkDefinitionProvider.createUri] Processing segment:", segment);
+        if (debugManager.isDebugEnabled()) {
+          debugManager.log(`[FileUrl] Processing segment: ${segment}`);
+        }
+
         // Encode spaces as %20 and keep other special characters as is
         const encodedSegment = encodeURIComponent(segment).replace(/%2F/g, '/');
-        console.log("[FileUrlLinkDefinitionProvider.createUri] Encoding encodedSegment:", encodedSegment);
+        if (debugManager.isDebugEnabled()) {
+          debugManager.log(`[FileUrl] Encoded segment: ${encodedSegment}`);
+        }
         return encodedSegment;
       }).join('/');
-      console.log("[FileUrlLinkDefinitionProvider.createUri] Encoded path:", encodedPath);
 
-      // Remove any trailing slashes
-      const cleanPath = encodedPath.replace(/\/+$/, "");
-      console.log(`[FileUrlLinkDefinitionProvider.createUri] Cleaned path:`, cleanPath);
+      if (debugManager.isDebugEnabled()) {
+        debugManager.log(`[FileUrl] Encoded path: ${encodedPath}`);
+      }
+
+      // Get cached RegExp for trailing slashes
+      const trailingSlashRegex = TextProcessor.getRegExp("/+$", "");
+      const cleanPath = encodedPath.replace(trailingSlashRegex, "");
+
+      if (debugManager.isDebugEnabled()) {
+        debugManager.log(`[FileUrl] Cleaned path: ${cleanPath}`);
+      }
+
       const result = `${protocol}${cleanPath}`;
-      console.log(`[FileUrlLinkDefinitionProvider.createUri] Final result with encoded spaces:`, result);
+      if (debugManager.isDebugEnabled()) {
+        debugManager.log(`[FileUrl] Final result: ${result}`);
+      }
 
       return result;
     }
 
-    // Remove any trailing slashes from the final URI
-    const cleanUri = uri.replace(/\/+$/, "");
-    console.log(`[FileUrlLinkDefinitionProvider.createUri] Returning cleaned URI:`, cleanUri);
+    // Remove any trailing slashes from the final URI using cached RegExp
+    const trailingSlashRegex = TextProcessor.getRegExp("/+$", "");
+    const cleanUri = uri.replace(trailingSlashRegex, "");
+
+    if (debugManager.isDebugEnabled()) {
+      debugManager.log(`[FileUrl] Returning cleaned URI: ${cleanUri}`);
+    }
     return cleanUri;
   }
 }

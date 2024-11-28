@@ -12,7 +12,12 @@ export function activate(context: vscode.ExtensionContext): void {
     debugManager.toggleDebug();
   });
 
-  context.subscriptions.push(debugCommand);
+  // Register file logging command
+  const fileLoggingCommand = vscode.commands.registerCommand('pattern-links.toggleFileLogging', () => {
+    debugManager.toggleFileLogging();
+  });
+
+  context.subscriptions.push(debugCommand, fileLoggingCommand);
 
   initFromConfig(context);
 
