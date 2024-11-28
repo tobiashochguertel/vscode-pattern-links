@@ -14,11 +14,11 @@
 
 You can install this extension in several ways:
 
-1. VS Code Marketplace: Search for `@hochguertel.work/pattern-links`
+1. VS Code Marketplace: Search for `TobiasHochguertel.pattern-links`
 2. Command Line:
 
    ```bash
-   code --install-extension @hochguertel.work/pattern-links
+   code --install-extension TobiasHochguertel.pattern-links
    ```
 
 3. VSIX File:

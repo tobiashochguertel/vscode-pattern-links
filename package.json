@@ -1,6 +1,6 @@
 {
-  "name": "@hochguertel.work/pattern-links",
-  "displayName": "Link Patterns",
+  "name": "pattern-links-fork",
+  "displayName": "Link Patterns (Fork)",
   "description": "Automatically turn text into links based upon regex patterns.",
   "version": "1.1.0",
   "publisher": "TobiasHochguertel",
