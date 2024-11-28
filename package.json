@@ -74,7 +74,7 @@
   "scripts": {
     "vscode:prepublish": "pnpm run compile && pnpm run lint && pnpm run test",
     "compile": "tsc -p ./",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint .",
     "watch": "tsc -watch -p ./",
     "test": "node ./node_modules/@vscode/test-electron/out/runTest.js --extensionDevelopmentPath=./ --extensionTestsPath=./out/test/suite",
     "package": "vsce package",
