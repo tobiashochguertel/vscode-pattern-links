@@ -38,7 +38,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "outDir": "out/src",
+    "outDir": "out",
     "rootDir": "src",
 
     // Advanced

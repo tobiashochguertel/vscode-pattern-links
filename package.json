@@ -71,7 +71,6 @@
       }
     }
   },
-  "files": ["out/**/*.js", "!out/**/*.map", "README.md", "package.json", "eslint.config.js"],
   "scripts": {
     "clean:out": "del ./out/**",
     "clean:out:tests": "del ./out/tests/**",
