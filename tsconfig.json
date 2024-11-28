@@ -3,7 +3,7 @@
     // Module and Target Settings
     "module": "commonjs",
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [ "ES2022" ],
     "moduleResolution": "node",
     "esModuleInterop": true,
 
@@ -30,7 +30,7 @@
     // Module Resolution
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*"]
+      "*": [ "node_modules/*" ]
     },
     "resolveJsonModule": true,
 
@@ -38,7 +38,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "outDir": "out",
+    "outDir": "out/src",
     "rootDir": "src",
 
     // Advanced
@@ -48,7 +48,8 @@
     "emitDecoratorMetadata": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    ".vscode-test.js"
   ],
   "exclude": [
     "node_modules",

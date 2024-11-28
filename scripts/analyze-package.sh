@@ -24,6 +24,9 @@ cleanup() {
 # Register the cleanup function to run on script exit
 trap cleanup EXIT
 
+# Clean up the build directory if it exists
+pnpm clean:out
+
 # Pack the package
 echo -e "${YELLOW}Creating package...${NC}"
 pnpm pack --pack-destination "$TEMP_DIR"

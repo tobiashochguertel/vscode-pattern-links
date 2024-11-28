@@ -6,7 +6,7 @@
   "publisher": "TobiasHochgurtel",
   "author": {
     "name": "Tobias Hochgürtel",
-    "url": "https://github.com/TobiasHochgurtel"
+    "url": "https://github.com/tobiashochguertel"
   },
   "contributors": [
     {
@@ -21,7 +21,7 @@
     "node": ">=18.0.0"
   },
   "repository": {
-    "url": "https://github.com/TobiasHochgurtel/vscode-pattern-links"
+    "url": "https://github.com/tobiashochguertel/vscode-pattern-links"
   },
   "categories": ["Other"],
   "activationEvents": ["onStartupFinished"],
@@ -71,21 +71,28 @@
       }
     }
   },
+  "files": ["out/**/*.js", "!out/**/*.map", "README.md", "package.json", "eslint.config.js"],
   "scripts": {
     "vscode:prepublish": "pnpm run compile && pnpm run lint && pnpm run test",
-    "compile": "tsc -p ./",
+    "compile": "pnpm clean:out:src && tsc -p ./",
     "lint": "eslint .",
     "watch": "tsc -watch -p ./",
-    "test": "node ./node_modules/@vscode/test-electron/out/runTest.js --extensionDevelopmentPath=./ --extensionTestsPath=./out/test/suite",
+    "tests": "pnpm clean:out:tests && pnpm tests:compile && pnpm tests:run",
+    "tests:compile": "tsc -p tsconfig.test.json",
+    "tests:run": "pnpm vscode-test",
     "package": "vsce package",
-    "package:check": "pnpm pack --dry-run",
-    "package:size": "pnpm pack --dry-run 2>&1 | grep -A 1 \"package size\" || true",
-    "package:list": "pnpm pack --dry-run 2>&1 | grep \"^[^D].*\\.js\\|.*\\.json\\|.*\\.d\\.ts\\|.*\\.md\" || true",
+    "package:check": "pnpm pack",
+    "package:size": "package:check 2>&1 | grep -A 1 \"package size\" || true",
+    "package:list": "package:check 2>&1 | grep \"^[^D].*\\.js\\|.*\\.json\\|.*\\.d\\.ts\\|.*\\.md\" || true",
     "package:analyze": "./scripts/analyze-package.sh",
     "prepack": "pnpm run package:size && pnpm run package:list",
     "publish:vscode": "vsce publish",
     "publish:ovsx": "ovsx publish",
-    "publish:all": "pnpm run publish:vscode && pnpm run publish:ovsx"
+    "publish:all": "pnpm run publish:vscode && pnpm run publish:ovsx",
+    "clean:out": "del ./out/**",
+    "clean:out:src": "del ./out/src/**",
+    "clean:out:tests": "del ./out/tests/**",
+    "clean:artifacts": "del ./out/**/*.js ./out/**/*.d.ts"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
@@ -94,8 +101,10 @@
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.2.1",
+    "del-cli": "^6.0.0",
     "eslint": "^9.0.0-alpha.0",
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.10",
