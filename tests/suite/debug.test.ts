@@ -1,12 +1,12 @@
 import * as assert from 'assert';
 import { suite, test, after, before, beforeEach } from 'mocha';
 import * as vscode from 'vscode';
-import { debugManager } from '../../src/debug';
+import { debugManager } from '../../src/utils/DebugManager';
 import { Rule } from '../../src/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { LogManager } from '../../src/utils/LogManager';
+import { FileLogWriter } from '../../src/utils/FileLogWriter';
 
 // Mock vscode.extensions.getExtension
 const originalGetExtension = vscode.extensions.getExtension;
@@ -44,9 +44,9 @@ suite('Debug Tests', () => {
         // Reset debug manager instance to use new test directory
         debugManager['logFilePath'] = logFilePath;
 
-        // Initialize log manager in test mode
-        const logManager = new LogManager(logFilePath, true);
-        debugManager['logManager'] = logManager;
+        // Initialize log writer in test mode
+        const writer = new FileLogWriter(logFilePath, true);
+        debugManager['logWriter'] = writer;
     });
 
     // Clear log file and reset debug state before each test
@@ -61,8 +61,8 @@ suite('Debug Tests', () => {
         // Reset debug instance and logging state
         debugManager['enabled'] = false;
         debugManager['fileLoggingEnabled'] = false;
-        const logManager = new LogManager(logFilePath, true);
-        debugManager['logManager'] = logManager;
+        const writer = new FileLogWriter(logFilePath, true);
+        debugManager['logWriter'] = writer;
     });
 
     test('Debug mode toggle', async () => {
@@ -145,7 +145,7 @@ suite('Debug Tests', () => {
     test('Debug logging with description', async () => {
         // Enable file logging only
         debugManager.toggleFileLogging();
-        
+
         // Clear log file after enabling logging
         await fs.promises.writeFile(logFilePath, '');
 

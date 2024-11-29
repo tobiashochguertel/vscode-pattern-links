@@ -30,75 +30,8 @@
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "type": "object",
       "title": "Pattern Links",
-      "properties": {
-        "patternlinks.rules": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["linkPattern", "linkTarget"],
-            "properties": {
-              "linkPattern": {
-                "type": "string",
-                "markdownDescription": "A regular expression used to find text in the document to turn into links.\n\nExample: `ISSUES-\\d+`\n\nThe example pattern would match text like `ISSUE-1` and `ISSUE-200`.",
-                "default": ""
-              },
-              "linkPatternFlags": {
-                "type": "string",
-                "markdownDescription": "A list of [regular expression flags](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags) to use.\n\nExample: `is`\n\nThe example flags make the search case-insensitive (`i` flag) and allows the `.` character to match over multiple lines (`s` flag). The `g` flag is always applied.",
-                "default": ""
-              },
-              "linkTarget": {
-                "type": "string",
-                "markdownDescription": "The link template.\n\nExample: `https://myorg.atlassian.net/browse/$0`\n\nIn the example, `$0` will be replaced with the captured text from the linkPattern; the final URL might be `https://myorg.atlassian.net/browse/ISSUE-200`.",
-                "default": ""
-              },
-              "description": {
-                "type": "string",
-                "markdownDescription": "Optional description of what this rule does. This helps document the purpose of the rule.",
-                "default": ""
-              },
-              "languages": {
-                "type": "array",
-                "markdownDescription": "An array of languages to enable this rule for.\n\nExample: `[\"plaintext\", \"markdown\"]`\n\nIf no languages are specified, the rule is enabled for all languages.",
-                "items": {
-                  "type": "string"
-                },
-                "default": []
-              }
-            },
-            "additionalProperties": false
-          },
-          "default": [],
-          "markdownDescription": "A list of rules for turning text into clickable links."
-        },
-        "patternlinks.debug": {
-          "type": "object",
-          "markdownDescription": "Debug logging configuration options",
-          "properties": {
-            "logFileMaxSize": {
-              "type": "number",
-              "default": 5,
-              "minimum": 1,
-              "maximum": 100,
-              "markdownDescription": "Maximum size of each log file in megabytes (MB). Default: 5MB"
-            },
-            "maxQueueSize": {
-              "type": "number",
-              "default": 100,
-              "minimum": 1,
-              "maximum": 1000,
-              "markdownDescription": "Maximum number of log messages to queue before writing to file. Default: 100 messages"
-            },
-            "customLogPath": {
-              "type": "string",
-              "default": "",
-              "markdownDescription": "Custom path for log files. If empty, logs will be stored in the extension's storage path"
-            }
-          }
-        }
-      }
+      "$ref": "./schemas/configuration.json"
     },
     "commands": [
       {

@@ -1,0 +1,94 @@
+{
+  "type": "object",
+  "properties": {
+    "patternlinks.rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["linkPattern", "linkTarget"],
+        "properties": {
+          "linkPattern": {
+            "type": "string",
+            "markdownDescription": "A regular expression used to find text in the document to turn into links.\n\nExample: `ISSUES-\\d+`\n\nThe example pattern would match text like `ISSUE-1` and `ISSUE-200`.",
+            "default": ""
+          },
+          "linkPatternFlags": {
+            "type": "string",
+            "markdownDescription": "A list of [regular expression flags](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#advanced_searching_with_flags) to use.\n\nExample: `is`\n\nThe example flags make the search case-insensitive (`i` flag) and allows the `.` character to match over multiple lines (`s` flag). The `g` flag is always applied.",
+            "default": ""
+          },
+          "linkTarget": {
+            "type": "string",
+            "markdownDescription": "The link template.\n\nExample: `https://myorg.atlassian.net/browse/$0`\n\nIn the example, `$0` will be replaced with the captured text from the linkPattern; the final URL might be `https://myorg.atlassian.net/browse/ISSUE-200`.",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "markdownDescription": "Optional description of what this rule does. This helps document the purpose of the rule.",
+            "default": ""
+          },
+          "languages": {
+            "type": "array",
+            "markdownDescription": "An array of languages to enable this rule for.\n\nExample: `[\"plaintext\", \"markdown\"]`\n\nIf no languages are specified, the rule is enabled for all languages.",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": [],
+      "markdownDescription": "A list of rules for turning text into clickable links."
+    },
+    "patternlinks.debug": {
+      "type": "object",
+      "markdownDescription": "Debug logging configuration options",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enable or disable debug mode globally. When enabled, debug information will be shown in the Output panel."
+        },
+        "fileLogging": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enable or disable file logging. When enabled, debug information will be written to a log file."
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": ["error", "warn", "info", "debug", "trace"],
+          "enumDescriptions": [
+            "Only log errors",
+            "Log warnings and errors",
+            "Log general information, warnings, and errors",
+            "Log detailed debug information",
+            "Log everything including trace information"
+          ],
+          "default": "info",
+          "markdownDescription": "Set the logging level. Available levels: error, warn, info, debug, trace."
+        },
+        "logFileMaxSize": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 100,
+          "markdownDescription": "Maximum size of each log file in megabytes (MB). When the file reaches this size, it will be rotated. Default: 5MB"
+        },
+        "maxQueueSize": {
+          "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 1000,
+          "markdownDescription": "Maximum number of log messages to queue before writing to file. Higher values may improve performance but use more memory. Default: 100 messages"
+        },
+        "customLogPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Custom path for log files. If empty, logs will be stored in the extension's storage path. Example: `/path/to/your/logs/pattern-links.log`"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
