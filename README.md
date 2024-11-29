@@ -72,7 +72,7 @@ When two rules apply to the same text, the one defined last wins.
       "linkTarget": "https://github.com/myorg/$1/pull/$2"
     },
     // Match links like special-case#22 to the relevant pull request,
-    // which is in a different github organisation, and has a long,
+    // which is in a different github organization, and has a long,
     // inconvenient name.
     {
       "linkPattern": "special-case#(\\d+)",
@@ -221,9 +221,21 @@ When file logging is enabled:
 
 - Debug messages will be written to a log file in addition to the Output panel
 - The log file location will be shown in the Output panel when file logging is enabled
-- Log messages include timestamps and detailed information about link creation and pattern matching
+- Log messages include timestamps and are deduplicated to prevent redundant entries
+- Each log entry contains detailed information about link creation and pattern matching
+- During test mode, logging is automatically disabled to prevent interference with test results
 
-Note: File logging only writes messages when debug mode is also enabled.
+Configuration options for logging can be set in your VS Code settings:
+
+```jsonc
+{
+  "patternlinks.debug": {
+    "maxQueueSize": 1000,  // Maximum number of messages to queue before processing
+    "enabled": false,      // Enable/disable debug mode
+    "fileLogging": false   // Enable/disable file logging
+  }
+}
+```
 
 Debug mode and file logging are particularly useful when:
 

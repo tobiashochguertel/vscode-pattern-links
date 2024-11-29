@@ -22,7 +22,7 @@ class DebugManager {
     }
 
     private getStoragePath(): string {
-        const extensionContext = vscode.extensions.getExtension('pattern-links')?.extensionPath;
+        const extensionContext = vscode.extensions.getExtension('TobiasHochguertel.pattern-links-fork')?.extensionPath;
         return extensionContext ? path.join(extensionContext, 'logs') : '';
     }
 
@@ -41,21 +41,45 @@ class DebugManager {
 
     public toggleFileLogging(): void {
         this.fileLoggingEnabled = !this.fileLoggingEnabled;
-        if (this.fileLoggingEnabled && this.logFilePath) {
-            // Create logs directory if it doesn't exist
+        if (this.fileLoggingEnabled) {
+            if (!this.logFilePath) {
+                const storagePath = this.getStoragePath();
+                if (!storagePath) {
+                    vscode.window.showErrorMessage('Pattern Links: Unable to determine storage path for log file');
+                    this.fileLoggingEnabled = false;
+                    return;
+                }
+                this.logFilePath = path.join(storagePath, 'pattern-links-debug.log');
+            }
+
             const logsDir = path.dirname(this.logFilePath);
-            if (!fs.existsSync(logsDir)) {
-                fs.mkdirSync(logsDir, { recursive: true });
+            try {
+                if (!fs.existsSync(logsDir)) {
+                    fs.mkdirSync(logsDir, { recursive: true });
+                }
+                // Create an empty log file if it doesn't exist
+                if (!fs.existsSync(this.logFilePath)) {
+                    fs.writeFileSync(this.logFilePath, '');
+                }
+                // Initialize log manager if needed
+                if (!this.logManager) {
+                    this.logManager = new LogManager(this.logFilePath);
+                }
+                // Only log in non-test mode
+                if (!this.logManager.isTestMode()) {
+                    this.log(`File logging enabled - Log file location: ${this.logFilePath}`);
+                }
+            } catch (error) {
+                console.error('Error creating log file:', error);
+                this.log(`Error creating log file: ${error}`);
+                this.fileLoggingEnabled = false;
+                return;
             }
-            
-            // Initialize log manager if needed
-            if (!this.logManager) {
-                this.logManager = new LogManager(this.logFilePath);
-            }
-            
-            this.log(`File logging enabled - Log file location: ${this.logFilePath}`);
         } else {
-            this.log(`File logging disabled`);
+            // Only log in non-test mode
+            if (this.logManager && !this.logManager.isTestMode()) {
+                this.log(`File logging disabled`);
+            }
             this.logManager = null;
         }
         vscode.window.showInformationMessage(`Pattern Links: File logging ${this.fileLoggingEnabled ? 'enabled' : 'disabled'}`);
@@ -80,26 +104,36 @@ class DebugManager {
     }
 
     public async log(message: string): Promise<void> {
-        if (this.enabled && message.length > 0) {
+        if (message.length === 0) {
+            return;
+        }
+
+        // Check if message already has a timestamp
+        if (!message.startsWith('[20')) {  // Simple check for ISO timestamp
             const timestamp = new Date().toISOString();
-            const logMessage = `[${timestamp}] ${message}`;
-            this.outputChannel.appendLine(logMessage);
-            await this.writeToLogFile(logMessage);
+            message = `[${timestamp}] ${message}`;
+        }
+        
+        // Write to output channel when debug is enabled
+        if (this.enabled) {
+            this.outputChannel.appendLine(message);
+        }
+        
+        // Write to file if file logging is enabled
+        if (this.fileLoggingEnabled && this.logManager) {
+            await this.writeToLogFile(message);
         }
     }
 
     public async logLinkCreation(text: string, rule: Rule, uri: string): Promise<void> {
-        if (this.enabled && text.length > 0) {
-            const description = rule.description ? `\nDescription: ${rule.description}` : '';
-            const message = `Link created:
-    Text: ${text}
-    Pattern: ${rule.linkPattern}
-    Flags: ${rule.linkPatternFlags ?? 'none'}
-    Target: ${rule.linkTarget}${description}
-    Final URI: ${uri}
-            `;
-            await this.log(message);
+        if (text.length === 0 || (!this.enabled && !this.fileLoggingEnabled)) {
+            return;
         }
+
+        const description = rule.description ? ` | Description: ${rule.description}` : '';
+        const message = `Link created | Text: ${text} | Pattern: ${rule.linkPattern} | Flags: ${rule.linkPatternFlags ?? 'none'} | Target: ${rule.linkTarget}${description} | Final URI: ${uri}`;
+        
+        await this.log(message);
     }
 
     public getLogFilePath(): string {
@@ -114,7 +148,7 @@ class DebugManager {
 * Flags: \`${rule.linkPatternFlags ?? 'none'}\`
 * Target template: \`${rule.linkTarget}\`${description}
 * Final URI: ${uri}
-        `).toString();
+        `).value;
     }
 }
 

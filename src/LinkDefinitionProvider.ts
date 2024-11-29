@@ -92,7 +92,7 @@ export class LinkDefinitionProvider implements vscode.DocumentLinkProvider {
           const link = new vscode.DocumentLink(range, parsedUri);
 
           if (debugManager.isDebugEnabled()) {
-            link.tooltip = debugManager.getHoverMessage(match[0], rule, uri);
+            link.tooltip = debugManager.getHoverMessage(match[0], rule, uri).toString();
             debugManager.logLinkCreation(match[0], rule, uri);
           }
 

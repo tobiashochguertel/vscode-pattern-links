@@ -1,122 +1,76 @@
 import * as fs from 'fs';
-import * as vscode from 'vscode';
+import * as path from 'path';
 
 export class LogManager {
-    private static readonly MB_TO_BYTES = 1024 * 1024;
-    private logQueue: string[] = [];
-    private lastWrite = Date.now();
-    private writeTimeout: NodeJS.Timeout | null = null;
+    private messageQueue: string[] = [];
     private logPath: string;
+    private testMode: boolean = false;
+    private maxQueueSize: number = 100;
+    private lastMessage: string = '';
 
-    constructor(logPath: string) {
+    constructor(logPath: string, testMode: boolean = false) {
         this.logPath = logPath;
-        // Listen for configuration changes
-        vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('patternlinks.debug')) {
-                // Configuration changed, update custom log path if needed
-                const config = vscode.workspace.getConfiguration('patternlinks.debug');
-                const customPath = config.get<string>('customLogPath');
-                if (customPath) {
-                    this.logPath = customPath;
-                }
-            }
-        });
+        this.testMode = testMode;
     }
 
-    private getConfig() {
-        const config = vscode.workspace.getConfiguration('patternlinks.debug');
-        return {
-            maxLogSize: (config.get<number>('logFileMaxSize') ?? 5) * LogManager.MB_TO_BYTES,
-            maxLogFiles: config.get<number>('maxLogFiles') ?? 5,
-            rateLimit: {
-                interval: config.get<number>('rateLimit.interval') ?? 100,
-                batchSize: config.get<number>('rateLimit.batchSize') ?? 10
-            }
-        };
+    public isTestMode(): boolean {
+        return this.testMode;
     }
 
-    /**
-     * Write a message to the log file with rate limiting
-     */
-    public async write(message: string): Promise<void> {
-        this.logQueue.push(message);
-
-        // If we're not waiting for a write already, schedule one
-        if (!this.writeTimeout) {
-            const now = Date.now();
-            const timeSinceLastWrite = now - this.lastWrite;
-            const config = this.getConfig();
-            const delay = Math.max(0, config.rateLimit.interval - timeSinceLastWrite);
-
-            this.writeTimeout = setTimeout(() => this.processQueue(), delay);
+    private async ensureLogDirectoryExists(): Promise<void> {
+        const logDir = path.dirname(this.logPath);
+        try {
+            await fs.promises.mkdir(logDir, { recursive: true });
+        } catch (error) {
+            console.error('Error creating log directory:', error);
+            throw error;
         }
     }
 
-    /**
-     * Process the queued log messages
-     */
-    private async processQueue(): Promise<void> {
-        this.writeTimeout = null;
-        this.lastWrite = Date.now();
+    public async write(message: string): Promise<void> {
+        if (!message.endsWith('\n')) {
+            message += '\n';
+        }
 
-        const config = this.getConfig();
-        // Take up to batchSize messages from the queue
-        const messages = this.logQueue.splice(0, config.rateLimit.batchSize);
-        if (messages.length === 0) return;
+        // Add timestamp only if not already present
+        if (!message.startsWith('[20')) {  // Simple check for ISO timestamp
+            const timestamp = new Date().toISOString();
+            message = `[${timestamp}] ${message}`;
+        }
+
+        // Prevent duplicate messages
+        const messageWithoutTimestamp = message.replace(/^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] /, '');
+        if (messageWithoutTimestamp === this.lastMessage) {
+            return;
+        }
+        this.lastMessage = messageWithoutTimestamp;
+
+        // In test mode, write immediately
+        if (this.testMode) {
+            await this.ensureLogDirectoryExists();
+            await fs.promises.appendFile(this.logPath, message);
+            return;
+        }
+
+        // Otherwise, add to queue
+        this.messageQueue.push(message);
+        if (this.messageQueue.length >= this.maxQueueSize) {
+            await this.flush();
+        }
+    }
+
+    private async flush(): Promise<void> {
+        if (this.messageQueue.length === 0) {
+            return;
+        }
 
         try {
-            // Check if we need to rotate logs
-            await this.checkRotation();
-
-            // Write messages to file
-            await fs.promises.appendFile(this.logPath, messages.join('\n') + '\n');
-
-            // If there are more messages, schedule another write
-            if (this.logQueue.length > 0) {
-                this.writeTimeout = setTimeout(() => this.processQueue(), config.rateLimit.interval);
-            }
+            await this.ensureLogDirectoryExists();
+            const messages = this.messageQueue.splice(0, this.messageQueue.length);
+            await fs.promises.appendFile(this.logPath, messages.join(''));
         } catch (error) {
             console.error('Error writing to log file:', error);
-        }
-    }
-
-    /**
-     * Check if log rotation is needed and perform rotation if necessary
-     */
-    private async checkRotation(): Promise<void> {
-        try {
-            const config = this.getConfig();
-            // Check if the log file exists and its size
-            const stats = await fs.promises.stat(this.logPath).catch(() => null);
-            if (!stats || stats.size < config.maxLogSize) return;
-
-            // Rotate logs
-            for (let i = config.maxLogFiles - 1; i >= 0; i--) {
-                const oldPath = i === 0 ? this.logPath : `${this.logPath}.${i}`;
-                const newPath = `${this.logPath}.${i + 1}`;
-
-                if (await this.fileExists(oldPath)) {
-                    if (i === config.maxLogFiles - 1) {
-                        await fs.promises.unlink(oldPath);
-                    } else {
-                        await fs.promises.rename(oldPath, newPath);
-                    }
-                }
-            }
-
-            // Create a new empty log file
-            await fs.promises.writeFile(this.logPath, '');
-        } catch (error) {
-            console.error('Error rotating log files:', error);
-        }
-    }
-
-    private async fileExists(filePath: string): Promise<boolean> {
-        try {
-            await fs.promises.access(filePath);
-            return true;
-        } catch {
-            return false;
+            throw error;
         }
     }
 }
