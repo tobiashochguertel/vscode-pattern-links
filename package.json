@@ -84,31 +84,12 @@
               "maximum": 100,
               "markdownDescription": "Maximum size of each log file in megabytes (MB). Default: 5MB"
             },
-            "maxLogFiles": {
+            "maxQueueSize": {
               "type": "number",
-              "default": 5,
+              "default": 100,
               "minimum": 1,
-              "maximum": 20,
-              "markdownDescription": "Maximum number of rotated log files to keep. Default: 5 files"
-            },
-            "rateLimit": {
-              "type": "object",
-              "properties": {
-                "interval": {
-                  "type": "number",
-                  "default": 100,
-                  "minimum": 50,
-                  "maximum": 1000,
-                  "markdownDescription": "Minimum time (in milliseconds) between log writes. Default: 100ms"
-                },
-                "batchSize": {
-                  "type": "number",
-                  "default": 10,
-                  "minimum": 1,
-                  "maximum": 100,
-                  "markdownDescription": "Maximum number of log messages to write in one batch. Default: 10 messages"
-                }
-              }
+              "maximum": 1000,
+              "markdownDescription": "Maximum number of log messages to queue before writing to file. Default: 100 messages"
             },
             "customLogPath": {
               "type": "string",
